@@ -7,7 +7,7 @@ const useStore = create((set) => ({
   error: null,
 
   fetchStudents: async () => {
-    set({ isLoading: true });
+    set({ isLoading: true, error: null }); // Reset error state
     try {
       const { data, error } = await supabase.from("studentdata").select("*");
       if (error) throw error;
@@ -19,41 +19,50 @@ const useStore = create((set) => ({
   },
 
   addStudent: async (newStudent) => {
+    set({ isLoading: true, error: null }); // Manage loading state and reset error
     try {
       const { data, error } = await supabase.from("studentdata").insert([newStudent]);
       if (error) throw error;
-      set((state) => ({ students: [...state.students, ...data] }));
+      set((state) => ({
+        students: [...state.students, ...(Array.isArray(data) ? data : [])],
+        isLoading: false,
+      }));
     } catch (error) {
       console.error("Error adding student:", error.message);
-      set({ error: error.message });
+      set({ error: error.message, isLoading: false });
     }
   },
 
   updateStudent: async (id, updatedData) => {
+    set({ isLoading: true, error: null }); // Manage loading state and reset error
     try {
-      const { data, error } = await supabase.from("studentdata").update(updatedData).eq("id", 15);
+      const { error } = await supabase.from("studentdata").update(updatedData).eq("id", id);
       if (error) throw error;
       set((state) => ({
         students: state.students.map((student) =>
           student.id === id ? { ...student, ...updatedData } : student
         ),
+        isLoading: false,
       }));
     } catch (error) {
       console.error("Error updating student:", error.message);
-      set({ error: error.message });
+      set({ error: error.message, isLoading: false });
     }
   },
+  
 
   deleteStudent: async (id) => {
+    set({ isLoading: true, error: null }); // Manage loading state and reset error
     try {
       const { error } = await supabase.from("studentdata").delete().eq("id", id);
       if (error) throw error;
       set((state) => ({
         students: state.students.filter((student) => student.id !== id),
+        isLoading: false,
       }));
     } catch (error) {
       console.error("Error deleting student:", error.message);
-      set({ error: error.message });
+      set({ error: error.message, isLoading: false });
     }
   },
 }));
